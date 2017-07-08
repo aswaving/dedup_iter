@@ -1,0 +1,12 @@
+[package]
+name = "dedup_iter"
+version = "0.1.0"
+authors = ["aswaving <a.swaving@gmail.com>"]
+description = "Deduplicating iterator adapters"
+keywords = ["iterator", "iter", "dedup"]
+readme = "README.md"
+repository = "https://github.com/aswaving/dedup_iter"
+documentation = "https://doc.rs/dedup_iter/0.1.0/dedup_iter"
+license = "MIT"
+
+[dependencies]
