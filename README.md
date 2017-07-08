@@ -1,4 +1,4 @@
-This crate provides a couple of iterator adapters for deduplication from elements of a source iterator, inspired by the dedup methods in `Vec`.
+This crate provides a couple of iterator adapters for deduplication of elements from a source iterator, inspired by the dedup methods in `Vec`.
 
 # `dedup`
 The `DedupIteratorAdapter` is an iterator adapter that removes consecutive repeated elements from the source iterator.
@@ -36,9 +36,9 @@ The `dedup_by_key` trait method returns a `DedupByKey` iterator struct.
 use dedup_iter::DedupByKeyAdapter;
 
 assert_eq!(
-    "abcdefe",
-    "aabbccdddeeeeffffeee".chars()
-     .dedup_by_key(|a| *a as usize)
+    "F I F O",
+    "First In, First Out".chars()
+     .dedup_by_key(|a| a.is_whitespace())
      .collect::<String>()
 );
 ```
