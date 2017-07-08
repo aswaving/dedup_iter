@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/aswaving/dedup_iter.svg?branch=master)](https://travis-ci.org/aswaving/dedup_iter)
+
 This crate provides a couple of iterator adapters for deduplication of elements from a source iterator, inspired by the dedup methods in `Vec`.
 
 # `dedup`
