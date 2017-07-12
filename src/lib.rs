@@ -48,18 +48,24 @@
 ///
 /// This struct is created by the `dedup` method of trait `DedupAdapter`, implemented on Iterator.
 /// To use the `dedup` method, `use dedup_iter::DedupAdapter`.
-pub struct Dedup<I, T> {
+pub struct Dedup<I>
+where
+    I: Iterator,
+{
     iter: I,
-    current_item: Option<T>,
+    current_item: Option<I::Item>,
 }
 
 /// An iterator that removes elements that are the same as previous one, according the provided function.
 ///
 /// This struct is created by the `dedup_by` method of trait `DedupByAdapter`, implemented on Iterator.
 /// To use the `dedup_by` method, `use dedup_iter::DedupByAdapter`.
-pub struct DedupBy<I, F, T> {
+pub struct DedupBy<I, F>
+where
+    I: Iterator,
+{
     iter: I,
-    current_item: Option<T>,
+    current_item: Option<I::Item>,
     same_bucket: F,
 }
 
@@ -74,10 +80,10 @@ pub struct DedupByKey<I, F, K> {
     key: F,
 }
 
-impl<I, T> Iterator for Dedup<I, T>
+impl<I> Iterator for Dedup<I>
 where
-    I: Iterator<Item = T>,
-    T: PartialEq + Clone,
+    I: Iterator,
+    I::Item: PartialEq + Clone,
 {
     type Item = I::Item;
 
@@ -93,11 +99,11 @@ where
     }
 }
 
-impl<I, F, T> Iterator for DedupBy<I, F, T>
+impl<I, F> Iterator for DedupBy<I, F>
 where
-    I: Iterator<Item = T>,
-    T: Clone,
-    F: Fn(&T, &T) -> bool,
+    I: Iterator,
+    I::Item: Clone,
+    F: Fn(&I::Item, &I::Item) -> bool,
 {
     type Item = I::Item;
 
@@ -143,7 +149,7 @@ where
 
 /// Provides the `dedup` method on `Iterator`s.
 pub trait DedupAdapter: Iterator {
-    fn dedup(self) -> Dedup<Self, Self::Item>
+    fn dedup(self) -> Dedup<Self>
     where
         Self: Sized,
     {
@@ -156,7 +162,7 @@ pub trait DedupAdapter: Iterator {
 
 /// Provides the `dedup_by` method on `Iterator`s.
 pub trait DedupByAdapter<F>: Iterator {
-    fn dedup_by(self, same_bucket: F) -> DedupBy<Self, F, Self::Item>
+    fn dedup_by(self, same_bucket: F) -> DedupBy<Self, F>
     where
         Self: Sized,
         F: Fn(&Self::Item, &Self::Item) -> bool,
