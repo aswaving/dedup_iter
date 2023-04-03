@@ -8,5 +8,6 @@ readme = "README.md"
 repository = "https://github.com/aswaving/dedup_iter"
 documentation = "https://docs.rs/dedup_iter/0.1.1/dedup_iter"
 license = "MIT"
+edition = "2018"
 
 [dependencies]

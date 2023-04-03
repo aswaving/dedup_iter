@@ -170,7 +170,7 @@ pub trait DedupByAdapter<F>: Iterator {
         DedupBy {
             iter: self,
             current_item: None,
-            same_bucket: same_bucket,
+            same_bucket,
         }
 
     }
@@ -186,7 +186,7 @@ pub trait DedupByKeyAdapter<F, K>: Iterator {
         DedupByKey {
             iter: self,
             current_key: None,
-            key: key,
+            key,
         }
 
     }
@@ -266,7 +266,7 @@ mod tests {
         struct Person<'a> {
             id: u64,
             name: &'a str,
-        };
+        }
         let t = vec![
             Person {
                 id: 0,
