@@ -231,7 +231,7 @@ mod tests {
 
     #[test]
     fn dedup_iter_numbers() {
-        let t = vec![10, 20, 20, 21, 30, 20];
+        let t = [10, 20, 20, 21, 30, 20];
         let v = t.iter().dedup().collect::<Vec<_>>();
         assert_eq!(v, vec![&10, &20, &21, &30, &20]);
     }
@@ -250,7 +250,7 @@ mod tests {
             id: u64,
             name: &'a str,
         }
-        let t = vec![
+        let t = [
             Person {
                 id: 0,
                 name: "Bilbo",
@@ -285,5 +285,59 @@ mod tests {
         let t = "abdefghijklmopqrstuvwxyz";
         let v = t.chars().dedup_by_key(|_| 0).collect::<String>();
         assert_eq!(&v, "a");
+    }
+
+    #[test]
+    fn dedup_non_clone_items() {
+        #[derive(Debug, PartialEq)]
+        struct NoClone(u32);
+        let t = vec![NoClone(1), NoClone(1), NoClone(2), NoClone(1)];
+        let v = t.into_iter().dedup().collect::<Vec<_>>();
+        assert_eq!(v, vec![NoClone(1), NoClone(2), NoClone(1)]);
+    }
+
+    #[test]
+    fn dedup_by_non_clone_items() {
+        #[derive(Debug, PartialEq)]
+        struct NoClone(u32);
+        let t = vec![NoClone(1), NoClone(3), NoClone(2), NoClone(5)];
+        let v = t
+            .into_iter()
+            .dedup_by(|a, b| a.0 % 2 == b.0 % 2)
+            .collect::<Vec<_>>();
+        assert_eq!(v, vec![NoClone(1), NoClone(2), NoClone(5)]);
+    }
+
+    #[test]
+    fn dedup_keeps_first_of_run() {
+        let t = vec![(1, 'a'), (1, 'b'), (2, 'c'), (2, 'd')];
+        let v = t
+            .into_iter()
+            .dedup_by(|a, b| a.0 == b.0)
+            .collect::<Vec<_>>();
+        assert_eq!(v, vec![(1, 'a'), (2, 'c')]);
+    }
+
+    #[test]
+    fn dedup_reads_one_element_ahead() {
+        let mut source = vec![1, 1, 2, 3].into_iter();
+        let first = source.by_ref().dedup().next();
+        assert_eq!(first, Some(1));
+        // Both 1s and the lookahead element 2 were consumed from the source.
+        assert_eq!(source.next(), Some(3));
+    }
+
+    #[test]
+    fn dedup_by_reads_one_element_ahead() {
+        let mut source = vec![1, 1, 2, 3].into_iter();
+        let first = source.by_ref().dedup_by(|a, b| a == b).next();
+        assert_eq!(first, Some(1));
+        assert_eq!(source.next(), Some(3));
+    }
+
+    #[test]
+    fn dedup_single_element() {
+        let v = std::iter::once(7).dedup().collect::<Vec<_>>();
+        assert_eq!(v, vec![7]);
     }
 }
