@@ -53,7 +53,7 @@ where
     I: Iterator,
 {
     iter: I,
-    current_item: Option<I::Item>,
+    pending: Option<I::Item>,
 }
 
 /// An iterator that removes elements that are the same as previous one, according the provided function.
@@ -65,7 +65,7 @@ where
     I: Iterator,
 {
     iter: I,
-    current_item: Option<I::Item>,
+    pending: Option<I::Item>,
     same_bucket: F,
 }
 
@@ -83,43 +83,38 @@ pub struct DedupByKey<I, F, K> {
 impl<I> Iterator for Dedup<I>
 where
     I: Iterator,
-    I::Item: PartialEq + Clone,
+    I::Item: PartialEq,
 {
     type Item = I::Item;
 
     fn next(&mut self) -> Option<I::Item> {
+        let current = self.pending.take().or_else(|| self.iter.next())?;
         for x in self.iter.by_ref() {
-            let item = Some(x.clone());
-            if self.current_item != item {
-                self.current_item = item;
-                return Some(x);
+            if x != current {
+                self.pending = Some(x);
+                break;
             }
         }
-        None
+        Some(current)
     }
 }
 
 impl<I, F> Iterator for DedupBy<I, F>
 where
     I: Iterator,
-    I::Item: Clone,
     F: Fn(&I::Item, &I::Item) -> bool,
 {
     type Item = I::Item;
 
     fn next(&mut self) -> Option<I::Item> {
+        let current = self.pending.take().or_else(|| self.iter.next())?;
         for x in self.iter.by_ref() {
-            let item = Some(x.clone());
-            let different = match self.current_item {
-                None => true,
-                Some(ref current_item) => !(self.same_bucket)(current_item, &x), 
-            };
-            if different {
-                self.current_item = item;
-                return Some(x);
+            if !(self.same_bucket)(&current, &x) {
+                self.pending = Some(x);
+                break;
             }
         }
-        None
+        Some(current)
     }
 }
 
@@ -155,7 +150,7 @@ pub trait DedupAdapter: Iterator {
     {
         Dedup {
             iter: self,
-            current_item: None,
+            pending: None,
         }
     }
 }
@@ -169,10 +164,9 @@ pub trait DedupByAdapter<F>: Iterator {
     {
         DedupBy {
             iter: self,
-            current_item: None,
+            pending: None,
             same_bucket,
         }
-
     }
 }
 
@@ -188,27 +182,14 @@ pub trait DedupByKeyAdapter<F, K>: Iterator {
             current_key: None,
             key,
         }
-
     }
 }
 
-impl<I> DedupAdapter for I
-where
-    I: Iterator,
-{
-}
+impl<I> DedupAdapter for I where I: Iterator {}
 
-impl<I, F> DedupByAdapter<F> for I
-where
-    I: Iterator,
-{
-}
+impl<I, F> DedupByAdapter<F> for I where I: Iterator {}
 
-impl<I, F, K> DedupByKeyAdapter<F, K> for I
-where
-    I: Iterator,
-{
-}
+impl<I, F, K> DedupByKeyAdapter<F, K> for I where I: Iterator {}
 
 #[cfg(test)]
 mod tests {
@@ -224,7 +205,8 @@ mod tests {
     #[test]
     fn remove_duplicate_whitespace() {
         let t = "Hierr zzitt ikk    well      goedd!";
-        let v = t.chars()
+        let v = t
+            .chars()
             .dedup_by(|a, b| a.is_whitespace() && b.is_whitespace())
             .collect::<String>();
         assert_eq!(&v, "Hierr zzitt ikk well goedd!");
@@ -233,7 +215,8 @@ mod tests {
     #[test]
     fn almost_acronym() {
         let t = "First In, Last Out";
-        let v = t.chars()
+        let v = t
+            .chars()
             .dedup_by_key(|a| a.is_whitespace())
             .collect::<String>();
         assert_eq!(&v, "F I L O");
@@ -277,17 +260,16 @@ mod tests {
                 name: "Bilbo",
             },
         ];
-        let v = t.iter()
+        let v = t
+            .iter()
             .dedup_by_key(|person| person.id)
             .collect::<Vec<_>>();
         assert_eq!(
             v,
-            vec![
-                &Person {
-                    id: 0,
-                    name: "Bilbo",
-                },
-            ]
+            vec![&Person {
+                id: 0,
+                name: "Bilbo",
+            },]
         );
     }
 
